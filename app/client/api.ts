@@ -139,8 +139,10 @@ export function getHeaders() {
   const makeBearer = (s: string) => `${isAzure ? "" : "Bearer "}${s.trim()}`;
   const validString = (x: string) => x && x.length > 0;
 
-  // use user's api key first
-  if (validString(apiKey)) {
+  // Check for local JWT token first
+  if (validString(accessStore.localAccessToken)) {
+    headers[authHeader] = makeBearer(accessStore.localAccessToken);
+  } else if (validString(apiKey)) {
     headers[authHeader] = makeBearer(apiKey);
   } else if (
     accessStore.enabledAccessControl() &&

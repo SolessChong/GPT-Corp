@@ -36,6 +36,7 @@ const DEFAULT_ACCESS_STATE = {
   disableGPT4: false,
   disableFastLink: false,
   customModels: "",
+  localAccessToken: "",
 };
 
 export const useAccessStore = createPersistStore(
@@ -54,6 +55,10 @@ export const useAccessStore = createPersistStore(
 
     isValidAzure() {
       return ensure(get(), ["azureUrl", "azureApiKey", "azureApiVersion"]);
+    },
+
+    setLocalAccessToken(apiKey: string) {
+      set({ openaiApiKey: apiKey });
     },
 
     isAuthorized() {
