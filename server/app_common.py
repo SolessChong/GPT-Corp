@@ -8,10 +8,14 @@ from llm.openai import OpenAIConfig
 from flask_cors import CORS
 from models.basic_models import *
 from models.common import db
+from api.user import user_blueprint
 
 def create_app(config_name):
     app = Flask(__name__)
     jwt = JWTManager(app)
+
+    # Register blueprints
+    app.register_blueprint(user_blueprint, url_prefix='/api/users')
 
     # Configure the app (e.g., from a config object or class)
     if config_name == 'development':
@@ -42,44 +46,6 @@ def create_app(config_name):
 
         return jsonify({"message": "Invalid credentials"}), 401
 
-    # @app.route('/v1/chat/completions', methods=['POST'])
-    # @jwt_required()
-    # def chat_completions():
-    #     user_id = get_jwt_identity()
-    #     if not user_id:
-    #         return jsonify({"message": "Unauthorized"}), 401
-        
-    #     user = User.query.get(user_id)
-    #     if user is None:
-    #         return jsonify({"message": "User not found"}), 404
-
-    #     # Check if the user has enough balance
-    #     if user.balance <= 0:
-    #         return jsonify({"message": "Insufficient balance"}), 402
-
-    #     url, api_key = OpenAIConfig.get_credentials()
-    #     incoming_data = request.get_json()
-    #     # print(f"relay data: {incoming_data}")
-    #     headers = {
-    #         'Content-Type': 'application/json',
-    #         'Authorization': f'Bearer {api_key}'
-    #     }
-
-    #     def generate():
-    #         try:
-    #             with requests.post(f'{url}/chat/completions', json=incoming_data, headers=headers, stream=True) as r:
-    #                 r.raise_for_status()
-    #                 for chunk in r.iter_content(chunk_size=None):  # Use server's chunk size
-    #                     if chunk:  # filter out keep-alive new chunks
-    #                         # Here you would normally process the chunk if needed
-    #                         yield f"data: {chunk.decode()}\n\n"
-    #         except requests.exceptions.RequestException as e:
-    #             yield f"data: {json.dumps({'error': str(e)})}\n\n"
-    #             return
-
-    #     return Response(stream_with_context(generate()), content_type='text/event-stream')
-
-    
     @app.route('/v1/chat/completions', methods=['POST'])
     @jwt_required()
     def chat_completions():
@@ -96,31 +62,37 @@ def create_app(config_name):
             return jsonify({"message": "Insufficient balance"}), 402
 
         url, api_key = OpenAIConfig.get_credentials()
-        incoming_data = request.get_json()
-        print(f"relay data: {incoming_data}")
+        incoming_data = request.json
+        
+        # Set the correct headers based on the successful request example
         headers = {
+            'Accept': 'text/event-stream',
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {api_key}'
         }
 
-        try:
-            response = requests.post(f'{url}/chat/completions', json=incoming_data, headers=headers)
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            abort(response.status_code, description=str(e))
+        print(f"relay data: {incoming_data}")
+        print(f"header: {headers}")
 
-        # Parse the response to find out how many tokens were used
-        response_data = response.json()
-        print(response_data)
-        tokens_used = response_data['usage']['total_tokens']
+        def generate():
+            with requests.post(f'{url}/chat/completions', json=incoming_data, headers=headers, stream=True) as r:
+                try:
+                    r.raise_for_status()
+                    for chunk in r.iter_content(chunk_size=None):  # Set chunk size as None to get data as it arrives
+                        if chunk:  # filter out keep-alive new chunks
+                            print(chunk.decode('utf-8'))  # Optional: for debugging purposes
+                            yield chunk.decode('utf-8')
+                except requests.exceptions.HTTPError as http_err:
+                    # Prints the HTTP status code and text if an HTTP error occurs
+                    error_message = f'HTTP error occurred: {http_err} - Status Code: {r.status_code} - Response: {r.text}'
+                    print(error_message)  # Optional: for debugging purposes
+                    yield f'Error: {error_message}'  # You may want to handle this more gracefully
+                except requests.exceptions.RequestException as req_err:
+                    # Prints the request exception message if a different RequestException occurs
+                    error_message = f'Request error occurred: {req_err}'
+                    print(error_message)  # Optional: for debugging purposes
+                    yield f'Error: {error_message}'  # You may want to handle this more gracefully
 
-        # Deduct tokens from the user's balance and add to their tokens_used
-        user.balance -= tokens_used  # Ensure that balance cannot go negative in your User model logic
-        user.tokens_used += tokens_used
-
-        # Update the user's record in the database
-        db.session.commit()
-
-        return jsonify(response_data), response.status_code
+        return Response(stream_with_context(generate()), content_type='text/event-stream')
 
     return app
