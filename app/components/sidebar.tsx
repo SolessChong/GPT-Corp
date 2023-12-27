@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 
 import styles from "./home.module.scss";
 
@@ -34,6 +34,19 @@ import { showConfirm, showToast } from "./ui-lib";
 const ChatList = dynamic(async () => (await import("./chat-list")).ChatList, {
   loading: () => null,
 });
+
+const BalanceModal = ({ onClose, balance, tokensUsed }) => {
+  return (
+    <div className={styles.modalBackdrop}>
+      <div className={styles.modal}>
+        <h3>User Balance</h3>
+        <p>Balance: {balance}</p>
+        <p>Tokens used: {tokensUsed.toLocaleString()}</p>
+        <button onClick={onClose}>Close</button>
+      </div>
+    </div>
+  );
+};
 
 function useHotKey() {
   const chatStore = useChatStore();
@@ -141,6 +154,11 @@ export function SideBar(props: { className?: string }) {
     [isMobileScreen],
   );
 
+  const [isBalanceModalVisible, setIsBalanceModalVisible] = useState(false);
+
+  const mockBalance = "40 USD";
+  const mockTokensUsed = 100000;
+
   useHotKey();
 
   return (
@@ -197,8 +215,13 @@ export function SideBar(props: { className?: string }) {
         }}
       >
         <ChatList narrow={shouldNarrow} />
-      </div>
 
+        <BalanceModal
+          balance={mockBalance}
+          tokensUsed={mockTokensUsed}
+          onClose={() => setIsBalanceModalVisible(false)}
+        />
+      </div>
       <div className={styles["sidebar-tail"]}>
         <div className={styles["sidebar-actions"]}>
           <div className={styles["sidebar-action"] + " " + styles.mobile}>
@@ -215,11 +238,6 @@ export function SideBar(props: { className?: string }) {
             <Link to={Path.Settings}>
               <IconButton icon={<SettingsIcon />} shadow />
             </Link>
-          </div>
-          <div className={styles["sidebar-action"]}>
-            <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-              <IconButton icon={<GithubIcon />} shadow />
-            </a>
           </div>
         </div>
         <div>

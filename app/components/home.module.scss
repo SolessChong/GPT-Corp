@@ -94,6 +94,26 @@
   }
 }
 
+.modalBackdrop {
+  position: absolute; // Changed from fixed to absolute
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: transparent; // Changed to transparent if always visible
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.2); // Optional shadow for better visibility
+  width: 100%; // Ensure it spans the entire width of the sidebar
+}
+
+
 .window-content {
   width: var(--window-content-width);
   height: 100%;
