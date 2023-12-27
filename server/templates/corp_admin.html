@@ -1,0 +1,205 @@
+<!-- templates/corp_admin.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="loginModalLabel">Login</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container mt-4">
+    <h2>User List</h2>
+    <div id="corpBalance" class="mb-2">
+        <strong>Corporation Balance:</strong> <span id="balanceValue">Loading...</span>
+    </div>
+    <button id="reloadData" class="btn btn-secondary mb-3">Reload Data</button>
+    <table class="table" id="userTable">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Balance</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- User data will be loaded here dynamically -->
+        </tbody>
+    </table>
+    
+</div>
+
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#loginModal">
+    Login
+</button>
+
+<!-- Your corp_admin content goes here -->
+<script>
+    // Function to reload user data
+    function reloadUserData() {
+        fetch('/corp/users', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(users => {
+            let userTableBody = document.querySelector('#userTable tbody');
+            userTableBody.innerHTML = ''; // Clear the table body
+    
+            // Populate the table with new data
+            users.forEach(user => {
+                let row = userTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.balance}</td>
+                    <td>
+                        <button class="btn btn-success btn-sm" onclick="transferToUser(${user.id})">Transfer</button>
+                        <button class="btn btn-primary btn-sm">Edit</button>
+                        <button class="btn btn-danger btn-sm">Delete</button>
+                    </td>
+                `;
+            });
+        })
+        .catch(error => {
+            console.error('There has been a problem with your fetch operation:', error);
+        });
+    }
+    
+    // Function to load corporation balance
+    function loadCorpBalance() {
+        fetch('/corp/my_corp', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(corp => {
+            document.getElementById('balanceValue').textContent = corp.balance.toFixed(2);
+        })
+        .catch(error => {
+            console.error('There has been a problem with your fetch operation:', error);
+            document.getElementById('balanceValue').textContent = 'Error loading balance';
+        });
+    }
+    // Function to transfer corp balance to a user
+    function transferToUser(userId) {
+        const amountToTransfer = prompt("Enter amount to transfer:");
+        if (amountToTransfer) {
+            fetch('/corp/transfer', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('access_token'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ recipient_id: userId, amount: amountToTransfer })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Transfer successful');
+                reloadUserData(); // Reload user data to update balances
+                loadCorpBalance(); // Reload corp balance to reflect the transfer
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+                alert('Transfer error: ' + error.message);
+            });
+        }
+    }
+
+
+    
+    // Event listener for the reload data button
+    document.getElementById('reloadData').addEventListener('click', function() {
+        reloadUserData();
+        loadCorpBalance(); // Also reload the corporation balance when the data is reloaded
+    });
+        
+    // Login form submission event listener
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Capture the username and password from the form
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+
+        // Perform the fetch call to the login endpoint
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username: username, password: password }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Login failed');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.access_token) {
+                localStorage.setItem('access_token', data.access_token);
+                // Close the login modal using jQuery
+                $('#loginModal').modal('hide');
+                // Reload user data
+                reloadUserData();
+            } else {
+                // If the response does not contain an access token, assume invalid credentials
+                alert('Invalid credentials');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Login error: ' + error.message);
+        });
+    });
+
+    // Call reloadUserData when the page loads if the user is already logged in
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('access_token')) {
+            reloadUserData();
+            loadCorpBalance();
+        }
+    });
+</script>
+
+{% endblock %}

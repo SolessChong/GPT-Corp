@@ -1,0 +1,60 @@
+<!-- templates/user_list.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h2>User List</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Balance</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.balance }}</td>
+            <td>
+                <!-- Transfer button (could open a modal or a separate transfer page) -->
+                <button class="btn btn-primary btn-transfer" data-user-id="{{ user.id }}">Transfer Credit</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Transfer Modal (Bootstrap) -->
+<div class="modal" tabindex="-1" role="dialog" id="transferModal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Transfer Credits</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="transferForm">
+            <div class="form-group">
+                <label for="recipientId">Recipient ID</label>
+                <input type="text" class="form-control" id="recipientId" name="recipientId" required readonly>
+            </div>
+            <div class="form-group">
+                <label for="amount">Amount</label>
+                <input type="number" class="form-control" id="amount" name="amount" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Transfer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// JavaScript to handle opening the transfer modal and setting up the transfer
+</script>
+{% endblock %}

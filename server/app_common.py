@@ -2,13 +2,15 @@ import requests
 import json
 from flask import Flask, abort
 from flask_sqlalchemy import SQLAlchemy
-from flask import request, jsonify, session, stream_with_context, Response
+from flask import request, jsonify, session, stream_with_context, Response, render_template
 from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity, jwt_required
 from llm.openai import OpenAIConfig
 from flask_cors import CORS
 from models.basic_models import *
 from models.common import db
 from api.user import user_blueprint
+from corp.corp import corp_blueprint
+from admin import admin
 
 def create_app(config_name):
     app = Flask(__name__)
@@ -16,6 +18,7 @@ def create_app(config_name):
 
     # Register blueprints
     app.register_blueprint(user_blueprint, url_prefix='/api/users')
+    app.register_blueprint(corp_blueprint, url_prefix='/corp')
 
     # Configure the app (e.g., from a config object or class)
     if config_name == 'development':
@@ -29,22 +32,29 @@ def create_app(config_name):
     db.init_app(app)
     CORS(app)  # You can also initialize CORS here if you prefer
 
+    ######
+    # Routes
+
     # Register Blueprints or define routes here
     # Define the login endpoint
-    @app.route('/login', methods=['POST'])
+    @app.route('/login', methods=['GET', 'POST'])
     def login():
-        data = request.get_json()
-        username = data.get('username')
-        password = data.get('password')
+        if request.method == 'GET':
+            return render_template('login.html')
+        elif request.method == 'POST':
+            data = request.get_json()
+            print(data)
+            username = data.get('username')
+            password = data.get('password')
 
-        user = User.query.filter_by(username=username).first()
-        print(f"Login: user.id: {user.id}")
-        if user and user.check_password(password):
-            # Create a new token with the user's ID inside
-            access_token = create_access_token(identity=user.id)
-            return jsonify(access_token=access_token), 200
+            user = User.query.filter(User.username==username).first()
+            print(f"Login: user.id: {user.id}")
+            if user and user.check_password(password):
+                # Create a new token with the user's ID inside
+                access_token = create_access_token(identity=user.id)
+                return jsonify(access_token=access_token), 200
 
-        return jsonify({"message": "Invalid credentials"}), 401
+            return jsonify({"message": "Invalid credentials"}), 401
 
     @app.route('/v1/chat/completions', methods=['POST'])
     @jwt_required()
@@ -94,5 +104,10 @@ def create_app(config_name):
                     yield f'Error: {error_message}'  # You may want to handle this more gracefully
 
         return Response(stream_with_context(generate()), content_type='text/event-stream')
+
+    ######
+    # Admin
+    admin.admin.init_app(app)
+    admin.admin.add_view(admin.AdminModelView(User, db.session, endpoint='admin_user'))
 
     return app

@@ -30,6 +30,7 @@ class User(common.db.Model, UserMixin):
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
     def transfer_balance(self, recipient, amount):
+        amount = float(amount)
         # Check if the user is an admin
         if not self.is_admin:
             return False  # Or raise an exception
