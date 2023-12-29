@@ -3,6 +3,7 @@ import { useEffect, useRef, useMemo, useState } from "react";
 import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
+import BalanceModal from "./balanceModal";
 import SettingsIcon from "../icons/settings.svg";
 import GithubIcon from "../icons/github.svg";
 import ChatGptIcon from "../icons/chatgpt.svg";
@@ -10,12 +11,13 @@ import AddIcon from "../icons/add.svg";
 import CloseIcon from "../icons/close.svg";
 import DeleteIcon from "../icons/delete.svg";
 import MaskIcon from "../icons/mask.svg";
+import MenuIcon from "../icons/menu.svg";
 import PluginIcon from "../icons/plugin.svg";
 import DragIcon from "../icons/drag.svg";
 
 import Locale from "../locales";
 
-import { useAppConfig, useChatStore } from "../store";
+import { useAccessStore, useAppConfig, useChatStore } from "../store";
 
 import {
   DEFAULT_SIDEBAR_WIDTH,
@@ -35,17 +37,9 @@ const ChatList = dynamic(async () => (await import("./chat-list")).ChatList, {
   loading: () => null,
 });
 
-const BalanceModal = ({ onClose, balance, tokensUsed }) => {
-  return (
-    <div className={styles.modalBackdrop}>
-      <div className={styles.modal}>
-        <h3>User Balance</h3>
-        <p>Balance: {balance}</p>
-        <p>Tokens used: {tokensUsed.toLocaleString()}</p>
-        <button onClick={onClose}>Close</button>
-      </div>
-    </div>
-  );
+type BalanceModalProps = {
+  balance: number;
+  tokensUsed: number;
 };
 
 function useHotKey() {
@@ -143,6 +137,7 @@ function useDragSideBar() {
 
 export function SideBar(props: { className?: string }) {
   const chatStore = useChatStore();
+  const accessStore = useAccessStore();
 
   // drag side bar
   const { onDragStart, shouldNarrow } = useDragSideBar();
@@ -153,11 +148,6 @@ export function SideBar(props: { className?: string }) {
     () => isIOS() && isMobileScreen,
     [isMobileScreen],
   );
-
-  const [isBalanceModalVisible, setIsBalanceModalVisible] = useState(false);
-
-  const mockBalance = "40 USD";
-  const mockTokensUsed = 100000;
 
   useHotKey();
 
@@ -173,11 +163,9 @@ export function SideBar(props: { className?: string }) {
     >
       <div className={styles["sidebar-header"]} data-tauri-drag-region>
         <div className={styles["sidebar-title"]} data-tauri-drag-region>
-          NextChat
+          EASYAI.CODES
         </div>
-        <div className={styles["sidebar-sub-title"]}>
-          Build your own AI assistant.
-        </div>
+        <div className={styles["sidebar-sub-title"]}>AI Made Easy</div>
         <div className={styles["sidebar-logo"] + " no-dark"}>
           <ChatGptIcon />
         </div>
@@ -197,11 +185,20 @@ export function SideBar(props: { className?: string }) {
           }}
           shadow
         />
-        <IconButton
+        {/* <IconButton
           icon={<PluginIcon />}
           text={shouldNarrow ? undefined : Locale.Plugin.Name}
           className={styles["sidebar-bar-button"]}
           onClick={() => showToast(Locale.WIP)}
+          shadow
+        /> */}
+        <IconButton
+          icon={<MenuIcon />}
+          text={shouldNarrow ? undefined : Locale.Auth.Login}
+          className={styles["sidebar-bar-button"]}
+          onClick={() => {
+            navigate(Path.Auth);
+          }}
           shadow
         />
       </div>
@@ -215,12 +212,7 @@ export function SideBar(props: { className?: string }) {
         }}
       >
         <ChatList narrow={shouldNarrow} />
-
-        <BalanceModal
-          balance={mockBalance}
-          tokensUsed={mockTokensUsed}
-          onClose={() => setIsBalanceModalVisible(false)}
-        />
+        <BalanceModal userId={accessStore.userId} />
       </div>
       <div className={styles["sidebar-tail"]}>
         <div className={styles["sidebar-actions"]}>

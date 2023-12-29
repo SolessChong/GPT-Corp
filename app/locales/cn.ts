@@ -11,6 +11,7 @@ const cn = {
       : "访问密码不正确或为空，请前往[登录](/#/auth)页输入正确的访问密码，或者在[设置](/#/settings)页填入你自己的 OpenAI API Key。",
   },
   Auth: {
+    Login: "登录",
     Title: "需要密码",
     Tips: "管理员开启了密码验证，请在下方填入访问码",
     SubTips: "或者输入你的 OpenAI API 密钥",
@@ -18,7 +19,7 @@ const cn = {
     Confirm: "确认",
     Later: "稍后再说",
     UsernamePlaceholder: "输入您的用户名",
-    PasswordPlaceholder: "输入您的密码"
+    PasswordPlaceholder: "输入您的密码",
   },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} 条对话`,
@@ -443,9 +444,9 @@ const cn = {
     Config: "配置",
   },
   Exporter: {
-    Description : {
-      Title: "只有清除上下文之后的消息会被展示"
-    },  
+    Description: {
+      Title: "只有清除上下文之后的消息会被展示",
+    },
     Model: "模型",
     Messages: "消息",
     Topic: "主题",

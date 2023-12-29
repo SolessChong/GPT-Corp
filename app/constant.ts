@@ -11,7 +11,7 @@ export const RUNTIME_CONFIG_DOM = "danger-runtime-config";
 export const DEFAULT_CORS_HOST = "https://a.nextweb.fun";
 export const DEFAULT_API_HOST = `${DEFAULT_CORS_HOST}/api/proxy`;
 // export const OPENAI_BASE_URL = "https://api.openai.com";
-export const OPENAI_BASE_URL = "http://localhost:5005"
+export const OPENAI_BASE_URL = "https://api.easyai.codes";
 
 export enum Path {
   Home = "/",
@@ -66,7 +66,7 @@ export const EXPORT_MESSAGE_CLASS_NAME = "export-markdown";
 export enum ServiceProvider {
   OpenAI = "OpenAI",
   Azure = "Azure",
-  Local = 'local',
+  Local = "local",
 }
 
 export const OpenaiPath = {
@@ -103,58 +103,62 @@ export const DEFAULT_MODELS = [
     name: "gpt-4",
     available: true,
   },
-  {
-    name: "gpt-4-0314",
-    available: true,
-  },
-  {
-    name: "gpt-4-0613",
-    available: true,
-  },
-  {
-    name: "gpt-4-32k",
-    available: true,
-  },
-  {
-    name: "gpt-4-32k-0314",
-    available: true,
-  },
-  {
-    name: "gpt-4-32k-0613",
-    available: true,
-  },
+  // {
+  //   name: "gpt-4-0314",
+  //   available: true,
+  // },
+  // {
+  //   name: "gpt-4-0613",
+  //   available: true,
+  // },
+  // {
+  //   name: "gpt-4-32k",
+  //   available: true,
+  // },
+  // {
+  //   name: "gpt-4-32k-0314",
+  //   available: true,
+  // },
+  // {
+  //   name: "gpt-4-32k-0613",
+  //   available: true,
+  // },
   {
     name: "gpt-4-1106-preview",
     available: true,
   },
-  {
-    name: "gpt-4-vision-preview",
-    available: true,
-  },
+  // {
+  //   name: "gpt-4-vision-preview",
+  //   available: true,
+  // },
   {
     name: "gpt-3.5-turbo",
     available: true,
   },
   {
-    name: "gpt-3.5-turbo-0301",
+    name: "gpt-4-all",
     available: true,
   },
-  {
-    name: "gpt-3.5-turbo-0613",
-    available: true,
-  },
-  {
-    name: "gpt-3.5-turbo-1106",
-    available: true,
-  },
-  {
-    name: "gpt-3.5-turbo-16k",
-    available: true,
-  },
-  {
-    name: "gpt-3.5-turbo-16k-0613",
-    available: true,
-  },
+  // {
+  //   name: "gpt-3.5-turbo-0301",
+  //   available: true,
+  // },
+  // {
+  //   name: "gpt-3.5-turbo-0613",
+  //   available: true,
+  // },
+  // {
+  //   name: "gpt-3.5-turbo-1106",
+  //   available: true,
+  // },
+  // {
+  //   name: "gpt-3.5-turbo-16k",
+  //   available: true,
+  // },
+  // {
+  //   name: "gpt-3.5-turbo-16k-0613",
+  //   available: true,
+  // },
 ] as const;
 
 export const CHAT_PAGE_SIZE = 15;

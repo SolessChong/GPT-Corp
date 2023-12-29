@@ -11,14 +11,14 @@ import { useEffect, useState } from "react";
 import { getClientConfig } from "../config/client";
 
 // Import axios or another HTTP client to make the POST request
-import axios from 'axios';
+import axios from "axios";
 
 export function AuthPage() {
   const navigate = useNavigate();
   const accessStore = useAccessStore();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const goHome = () => navigate(Path.Home);
   const goChat = () => navigate(Path.Chat);
@@ -31,26 +31,30 @@ export function AuthPage() {
   const handleLogin = async () => {
     try {
       // Replace with your Flask backend URL and endpoint
-      const response = await axios.post('http://127.0.0.1:5005/login', {
+      const response = await axios.post("https://api.easyai.codes/login", {
         username: username,
         password: password,
       });
-  
+
       // If login is successful, navigate to the chat page
       if (response.status === 200) {
         // Here you might want to store the login state in accessStore
-        useAccessStore.getState().setLocalAccessToken(response.data.access_token); // Update the store with the token
+        useAccessStore
+          .getState()
+          .setLocalAccessToken(response.data.access_token); // Update the store with the token
+        useAccessStore.getState().setUserId(response.data.user_id);
         goChat();
       } else {
         // Handle non-successful login attempts here
-        setErrorMessage('Invalid credentials. Please try again.');
+        setErrorMessage("Invalid credentials. Please try again.");
       }
     } catch (error) {
       // Handle errors here (e.g., network error, server error)
-      setErrorMessage(error.response?.data?.message || 'An error occurred. Please try again.');
+      // setErrorMessage(error.response?.data?.message || 'An error occurred. Please try again.');
+      setErrorMessage("An error occurred. Please try again.");
     }
   };
-  
+
   useEffect(() => {
     if (getClientConfig()?.isApp) {
       navigate(Path.Settings);
@@ -81,7 +85,9 @@ export function AuthPage() {
         onChange={(e) => setPassword(e.currentTarget.value)}
       />
 
-      {errorMessage && <div className={styles["auth-error-message"]}>{errorMessage}</div>}
+      {errorMessage && (
+        <div className={styles["auth-error-message"]}>{errorMessage}</div>
+      )}
 
       <div className={styles["auth-actions"]}>
         <IconButton

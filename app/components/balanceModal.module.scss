@@ -1,0 +1,52 @@
+// /* balanceModal.module.css */
+
+// .modalBackdrop {
+//     position: fixed;
+//     top: 0;
+//     left: 0;
+//     right: 0;
+//     bottom: 0;
+//     display: flex;
+//     justify-content: center;
+//     align-items: flex-end; /* Align the modal at the bottom */
+//     background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent backdrop */
+//   }
+  
+//   .modal {
+//     padding: 10px 14px;
+//     background-color: var(--white);
+//     border-radius: 10px;
+//     margin-bottom: 10px;
+//     box-shadow: var(--card-shadow);
+//     transition: background-color 0.3s ease;
+//     cursor: pointer;
+//     user-select: none;
+//     border: 2px solid transparent;
+//     position: relative;
+//     content-visibility: auto;
+//   }
+  
+//   .modal:hover {
+//     background-color: var(--hover-color);
+//   }
+  
+//   .modalTitle {
+//     font-size: 14px;
+//     font-weight: bolder;
+//     display: block;
+//     width: calc(100% - 15px);
+//     overflow: hidden;
+//     text-overflow: ellipsis;
+//     white-space: nowrap;
+//   }
+  
+//   .modalInfo {
+//     display: flex;
+//     justify-content: space-between;
+//     color: rgb(166, 166, 166);
+//     font-size: 12px;
+//     margin-top: 8px;
+//   }
+  
+//   /* You can add @keyframes for slide-in animation if needed */
+  

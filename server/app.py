@@ -16,7 +16,6 @@ def init_app():
         new_user = User(username='testuser', email='a@a.com', balance=1000)
         new_user.set_password('testpassword')
 
-
         # Create a corporation
         new_corp = Corp(name='TestCorp', balance=10000)
         db.session.add(new_corp)

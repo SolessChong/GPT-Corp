@@ -1,5 +1,6 @@
 import requests
 import json
+import tiktoken
 from flask import Flask, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask import request, jsonify, session, stream_with_context, Response, render_template
@@ -11,6 +12,12 @@ from models.common import db
 from api.user import user_blueprint
 from corp.corp import corp_blueprint
 from admin import admin
+from collections import defaultdict
+from threading import Lock
+
+# Initialize a lock and a defaultdict for the cache
+cache_lock = Lock()
+response_tokens_cache = defaultdict(int)
 
 def create_app(config_name):
     app = Flask(__name__)
@@ -52,7 +59,7 @@ def create_app(config_name):
             if user and user.check_password(password):
                 # Create a new token with the user's ID inside
                 access_token = create_access_token(identity=user.id)
-                return jsonify(access_token=access_token), 200
+                return jsonify(access_token=access_token, user_id=user.id), 200
 
             return jsonify({"message": "Invalid credentials"}), 401
 
@@ -73,6 +80,36 @@ def create_app(config_name):
 
         url, api_key = OpenAIConfig.get_credentials()
         incoming_data = request.json
+
+        def num_tokens_from_string(string: str, encoding_name: str="cl100k_base") -> int:
+            """Returns the number of tokens in a text string."""
+            encoding = tiktoken.get_encoding(encoding_name)
+            num_tokens = len(encoding.encode(string))
+            return num_tokens
+
+        # Calculate prompt tokens
+        prompt_tokens = sum(num_tokens_from_string(message['content']) for message in incoming_data['messages'] if message['role'] == 'system' or message['role'] == 'user')
+        # Clear cache and write to db
+        response_tokens = response_tokens_cache.get(user_id, 0)
+        with cache_lock:
+            response_tokens_cache[user_id] = 0
+        # Update user data here since streaming is done
+        total_tokens = prompt_tokens + response_tokens
+        user.tokens_used += total_tokens
+
+        print(f"Total tokens: {total_tokens}, prompt tokens: {prompt_tokens}, cache response tokens: {response_tokens}")
+
+        # Calculate the balance used
+        model_ratio = OpenAIConfig.get_model_cost_ratios()[incoming_data['model']]
+        balance_used = total_tokens * model_ratio
+
+        # Deduct the balance used from the user's balance
+        user.balance -= balance_used
+
+        print(f"Balance used: {balance_used}")
+
+        # Commit the changes to the database
+        common.db.session.commit()
         
         # Set the correct headers based on the successful request example
         headers = {
@@ -88,10 +125,20 @@ def create_app(config_name):
             with requests.post(f'{url}/chat/completions', json=incoming_data, headers=headers, stream=True) as r:
                 try:
                     r.raise_for_status()
+                    full_content = ''
                     for chunk in r.iter_content(chunk_size=None):  # Set chunk size as None to get data as it arrives
                         if chunk:  # filter out keep-alive new chunks
-                            print(chunk.decode('utf-8'))  # Optional: for debugging purposes
+                            chunk_data = chunk.decode('utf-8')
+                            print(f"- {chunk.decode('utf-8')}")  # Optional: for debugging purposes
+                            # Count the occurrences of "data: " and update the cache
+                            num_data_prefixes = chunk_data.count("data: ")
+                            tokens_to_add = num_data_prefixes * 2
+                            # Update the cache in a thread-safe manner
+                            with cache_lock:
+                                response_tokens_cache[user_id] += tokens_to_add
                             yield chunk.decode('utf-8')
+                            print(f"response_tokens_cache: {response_tokens_cache}")
+
                 except requests.exceptions.HTTPError as http_err:
                     # Prints the HTTP status code and text if an HTTP error occurs
                     error_message = f'HTTP error occurred: {http_err} - Status Code: {r.status_code} - Response: {r.text}'
@@ -101,6 +148,9 @@ def create_app(config_name):
                     # Prints the request exception message if a different RequestException occurs
                     error_message = f'Request error occurred: {req_err}'
                     print(error_message)  # Optional: for debugging purposes
+                    yield f'Error: {error_message}'  # You may want to handle this more gracefully
+                except json.decoder.JSONDecodeError as json_err:
+                    error_message = f'Json error occurred: {json_err}'
                     yield f'Error: {error_message}'  # You may want to handle this more gracefully
 
         return Response(stream_with_context(generate()), content_type='text/event-stream')
